@@ -126,6 +126,16 @@
   @media (prefers-reduced-motion: reduce){.sigBox{animation:none}}
   .lmPop{position:absolute;bottom:28%;font-size:34px;animation:lmGrow 1.25s ease-in forwards;pointer-events:none}
   @keyframes lmGrow{from{transform:scale(.3);opacity:0}25%{opacity:1}80%{opacity:1}to{transform:scale(1.25);opacity:0}}
+  .scene{position:absolute;inset:0;transition:transform .55s cubic-bezier(.3,.8,.4,1)}
+  .scene.turnL{transform:translateX(95px) rotate(7deg) scale(1.07)}
+  .scene.turnR{transform:translateX(-95px) rotate(-7deg) scale(1.07)}
+  @media (prefers-reduced-motion: reduce){.scene{transition:none}}
+  .cross{position:absolute;left:50%;transform:translateX(-50%);background:var(--road);border-radius:6px;opacity:0}
+  .cross .cl{position:absolute;left:0;right:0;top:50%;height:3px;transform:translateY(-50%);
+             background:repeating-linear-gradient(90deg,var(--sun) 0 14px,transparent 14px 30px);opacity:.7}
+  .zone{position:absolute;left:50%;transform:translateX(-50%);bottom:2%;width:210px;text-align:center;
+        font-size:11px;font-weight:700;color:var(--sun);opacity:0;transition:opacity .2s}
+  .zone.on{opacity:1}
 
   /* 地図ビュー（モード2） */
   .mapWrap{flex:1;min-height:0;display:grid;place-items:center}
@@ -319,7 +329,7 @@ const MODES=[
   lvNames:["2回まがる","3回まがる","4回まがる","スタートはどっち？","5回+スピード"]},
  {id:"multi",icon:"🚦",color:"#7E3A55",name:"ながら運転",
   desc:"案内も信号も目印も、ぜんぶ同時。実際の運転はマルチタスク",
-  full:"本番の運転は<b>いくつも同時</b>。ナビの案内には ⬅➡、🔴信号や🚶歩行者が出たら<b>すぐ🛑ブレーキ</b>。レベルが上がると、🏪の数を<b>こっそり数えながら</b>になり、案内と信号が同時に来ます。ほかの4モードで鍛えた力の総しあげ。",
+  full:"本番の運転は<b>いくつも同時</b>。案内のあと交差点がだんだん近づいてくるので、<b>「いまだ！」の合図が出ている間に</b> ⬅➡。早すぎると手前の角、遅いと通り過ぎます。🔴信号や🚶歩行者は<b>すぐ🛑ブレーキ</b>。レベルが上がると🏪を数えながらになり、案内と信号が同時に来ます。",
   lvNames:["ナビ+信号","歩行者もいる","お店もかぞえる","同時に来る","本番なみ"]},
 ];
 const LV_MAX=5;
@@ -758,11 +768,11 @@ RUN.where=function(level){
 /* ================= モード5：ながら運転 ================= */
 RUN.multi=function(level){
   const P=[
-    {nav:8, sig:2,ped:false,land:0,decoy:0,navT:2400,sigT:1900,gap:[1900,900],overlap:false,conflict:false},
-    {nav:8, sig:4,ped:true, land:0,decoy:0,navT:2200,sigT:1700,gap:[1700,800],overlap:false,conflict:false},
-    {nav:8, sig:3,ped:true, land:3,decoy:4,navT:2200,sigT:1700,gap:[1500,800],overlap:false,conflict:false},
-    {nav:10,sig:4,ped:true, land:3,decoy:4,navT:2000,sigT:1600,gap:[1300,700],overlap:true, conflict:false},
-    {nav:12,sig:5,ped:true, land:4,decoy:5,navT:1800,sigT:1400,gap:[1100,600],overlap:true, conflict:true},
+    {nav:6, sig:2,ped:false,land:0,decoy:0,appr:3400,ws:.40,sigT:1900,gap:[1900,900],overlap:false,conflict:false},
+    {nav:7, sig:4,ped:true, land:0,decoy:0,appr:3000,ws:.45,sigT:1700,gap:[1700,800],overlap:false,conflict:false},
+    {nav:7, sig:3,ped:true, land:3,decoy:4,appr:2800,ws:.48,sigT:1700,gap:[1500,800],overlap:false,conflict:false},
+    {nav:8, sig:4,ped:true, land:3,decoy:4,appr:2500,ws:.52,sigT:1600,gap:[1300,700],overlap:true, conflict:false},
+    {nav:10,sig:5,ped:true, land:4,decoy:5,appr:2100,ws:.55,sigT:1400,gap:[1100,600],overlap:true, conflict:true},
   ][level-1];
   const TARGET="🏪";
   // ---- タイムライン生成 ----
@@ -772,21 +782,22 @@ RUN.multi=function(level){
   for(let i=0;i<P.decoy;i++)bag.push({type:"land",em:pick(["🍞","📮","🌸","🐶","💈"]),hit:false});
   if(!P.overlap)for(let i=0;i<P.sig;i++)bag.push({type:"sig"});
   bag=shuffle(bag);
-  let t=2000;
-  bag.forEach(ev=>{ev.t=t;t+=P.gap[0]+rnd(P.gap[1]);});
+  let t=2200;
+  bag.forEach(ev=>{ev.t=t;t+=(ev.type==="nav"?P.appr+700+rnd(600):P.gap[0]+rnd(P.gap[1]));});
   if(P.overlap){
     const navs=bag.filter(e=>e.type==="nav");
-    for(let i=0;i<P.sig;i++)bag.push({type:"sig",t:pick(navs).t+400+rnd(500)});
+    for(let i=0;i<P.sig;i++)bag.push({type:"sig",t:pick(navs).t+300+rnd(Math.floor(P.appr*0.4))});
   }
   bag.sort((a,b)=>a.t-b.t);
-  const tEnd=bag[bag.length-1].t+3200;
+  const tEnd=bag[bag.length-1].t+P.appr+1500;
   const planned=P.nav+P.sig+(P.land?1:0);
   // ---- 画面 ----
   const stage=$("stage");
-  stage.innerHTML=`<p class="prompt">ナビは ⬅➡、🔴や🚶が出たら<b>🛑ブレーキ</b>${P.land?"。🏪の数も<b>こっそり数えて</b>":""}！</p>
-    <div class="roadView"><div class="sunGlow"></div><div class="road"></div><div class="lane"></div>
+  stage.innerHTML=`<p class="prompt">交差点が<b>目の前に来たら</b> ⬅➡！ 🔴や🚶は<b>すぐ🛑</b>${P.land?"。🏪も<b>こっそり数えて</b>":""}</p>
+    <div class="roadView">
+      <div class="scene" id="scene"><canvas id="mcv" style="position:absolute;inset:0;width:100%;height:100%"></canvas></div>
       <div class="naviBox" id="navi"><div class="arr" id="nArr">🚗</div><div class="say" id="nSay">まもなく出発…</div><div class="dist" id="nDist"></div></div>
-      <div class="sigBox" id="sigBox" style="display:none"><div class="se" id="sigE"></div><div class="st" id="sigT"></div></div>
+      <div class="zone" id="zone">🔶 いまだ！曲がって！</div>
     </div>`;
   const row=ansRow([{g:"⬅️",label:"左折",key:"L"},{g:"🛑",label:"ブレーキ",key:"B"},{g:"➡️",label:"右折",key:"R"}]);
   setTimerBar(tEnd,null);
@@ -794,44 +805,173 @@ RUN.multi=function(level){
   setCount(0,planned);
   function bump(){done++;setCount(Math.min(done,planned),planned);}
   function pressFx(b,ok){b.classList.add(ok?"good":"badPick");later(280,()=>b.classList.remove("good","badPick"));}
-  // ---- ナビ案内 ----
+  // ---- 疑似3D描画（canvas） ----
+  const sess=session;
+  const V={cross:null,sig:null,lands:[]};
+  const cv=$("mcv"),ctx=cv.getContext("2d");
+  function fit(){
+    const r=cv.parentElement.getBoundingClientRect();
+    const d=Math.min(2,window.devicePixelRatio||1);
+    cv.width=Math.max(1,r.width*d);cv.height=Math.max(1,r.height*d);
+    ctx.setTransform(d,0,0,d,0,0);cv._w=r.width;cv._h=r.height;
+  }
+  fit();
+  function draw(){
+    const W=cv._w,H=cv._h,cx=W/2,hy=H*0.30,now=performance.now();
+    const yAt=t=>hy+(H-hy)*t;
+    const hwAt=t=>W*0.55*t;
+    // 空と夕日
+    let g=ctx.createLinearGradient(0,0,0,hy);
+    g.addColorStop(0,"#3B2E63");g.addColorStop(1,"#5A3F70");
+    ctx.fillStyle=g;ctx.fillRect(0,0,W,hy);
+    const sg=ctx.createRadialGradient(cx,hy*0.82,4,cx,hy*0.82,46);
+    sg.addColorStop(0,"rgba(255,209,102,.9)");sg.addColorStop(.55,"rgba(255,138,122,.35)");sg.addColorStop(1,"rgba(255,138,122,0)");
+    ctx.fillStyle=sg;ctx.fillRect(cx-50,hy*0.82-50,100,100);
+    // 地面と本線
+    ctx.fillStyle="#2E295C";ctx.fillRect(0,hy,W,H-hy);
+    ctx.fillStyle="#39336E";
+    ctx.beginPath();ctx.moveTo(cx-W*0.07,hy);ctx.lineTo(cx+W*0.07,hy);
+    ctx.lineTo(cx+hwAt(1),H);ctx.lineTo(cx-hwAt(1),H);ctx.closePath();ctx.fill();
+    // 交差点（近づいてくる曲がり角）
+    let band=null;
+    const zoneOn=$("zone")&&$("zone").classList.contains("on");
+    if(V.cross){
+      const p=Math.min((now-V.cross.t0)/V.cross.dur,1.05);
+      if(p>0.03){
+        const y2=yAt(Math.max(p,0.06)),y1=yAt(Math.max(p*0.8,0.04));
+        band=[y1,y2];
+        ctx.fillStyle="#39336E";ctx.fillRect(0,y1,W,y2-y1);
+        ctx.fillStyle="rgba(255,255,255,.07)";ctx.fillRect(0,y1,W,2);
+        ctx.strokeStyle="rgba(255,209,102,.5)";ctx.lineWidth=Math.max(1.5,3*p);
+        ctx.setLineDash([12*p+4,14*p+4]);
+        ctx.beginPath();ctx.moveTo(0,(y1+y2)/2);ctx.lineTo(W,(y1+y2)/2);ctx.stroke();ctx.setLineDash([]);
+        // 停止線
+        ctx.fillStyle="rgba(240,240,255,.55)";
+        ctx.fillRect(cx-hwAt(p)*0.9,y2+4*p,hwAt(p)*1.8,Math.max(2,5*p));
+        if(zoneOn){
+          ctx.strokeStyle="rgba(255,209,102,"+(0.55+0.35*Math.sin(now/110))+")";
+          ctx.lineWidth=3;ctx.strokeRect(-2,y1,W+4,y2-y1);
+        }
+      }
+    }
+    // 車線ダッシュ（流れる）
+    const phase=(now/900)%1;
+    ctx.fillStyle="rgba(255,209,102,.85)";
+    for(let i=0;i<7;i++){
+      const tt=((i/7)+phase)%1;
+      if(tt<0.06)continue;
+      const ya=yAt(tt),yb=yAt(Math.min(tt+0.045,1));
+      if(band&&ya>band[0]-6&&ya<band[1]+6)continue;
+      const w=Math.max(2,7*tt);
+      ctx.fillRect(cx-w/2,ya,w,Math.max(3,yb-ya));
+    }
+    // 近づいてくるオブジェクト（遠→近の順に描く）
+    const objs=[];
+    V.lands=V.lands.filter(L=>(now-L.t0)/L.dur<1.1);
+    V.lands.forEach(L=>objs.push({t:Math.min((now-L.t0)/L.dur,1.05),kind:"land",o:L}));
+    if(V.sig)objs.push({t:Math.min((now-V.sig.t0)/V.sig.dur,1.02),kind:"sig",o:V.sig});
+    objs.sort((a,b)=>a.t-b.t);
+    ctx.textBaseline="alphabetic";
+    objs.forEach(({t,kind,o})=>{
+      if(t<0.03)return;
+      const y=yAt(t);
+      ctx.textAlign="center";
+      if(kind==="land"){
+        ctx.font=Math.max(10,52*t)+"px sans-serif";
+        ctx.fillText(o.em,cx+o.side*hwAt(t)*1.28,y);
+      }else if(o.ped){
+        // 横断歩道と歩行者
+        ctx.fillStyle="rgba(240,240,255,.7)";
+        const bw=hwAt(t)*2;
+        for(let s=0;s<6;s++){const sx=cx-bw/2+bw*(s+0.15)/6;ctx.fillRect(sx,y-10*t,bw*0.09,20*t);}
+        ctx.font=Math.max(10,54*t)+"px sans-serif";
+        ctx.fillText("🚶",cx-hwAt(t)*0.25,y);
+        if(t>0.35){ctx.font="700 "+Math.max(10,15*t+6)+"px sans-serif";ctx.fillStyle="#FF8A94";
+          ctx.fillText("🛑 とまって！",cx,y-64*t);}
+      }else{
+        // 赤信号（右路側・日本式で赤は右）
+        const x=cx+hwAt(t)*0.92+8,ph=88*t,bw2=34*t,bh=14*t;
+        ctx.strokeStyle="#4A4480";ctx.lineWidth=Math.max(1.5,4*t);
+        ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y-ph);ctx.stroke();
+        ctx.fillStyle="#191534";
+        ctx.fillRect(x-bw2/2,y-ph-bh,bw2,bh);
+        ctx.fillStyle="rgba(255,255,255,.14)";
+        ctx.beginPath();ctx.arc(x-bw2/2+bh*0.5,y-ph-bh/2,bh*0.34,0,7);ctx.fill();
+        ctx.beginPath();ctx.arc(x,y-ph-bh/2,bh*0.34,0,7);ctx.fill();
+        const blink=0.6+0.4*Math.sin(now/110);
+        ctx.fillStyle="rgba(255,80,90,"+blink+")";
+        ctx.beginPath();ctx.arc(x+bw2/2-bh*0.5,y-ph-bh/2,bh*0.4,0,7);ctx.fill();
+        if(t>0.35){ctx.font="700 "+Math.max(10,15*t+6)+"px sans-serif";ctx.fillStyle="#FF8A94";
+          ctx.fillText("🛑 しんごう！",x-14,y-ph-bh-8*t-4);}
+      }
+    });
+  }
+  const renderIv=setInterval(()=>{
+    if(session!==sess||!cv.isConnected){clearInterval(renderIv);return;}
+    if(cv._w!==cv.parentElement.clientWidth)fit();
+    draw();
+  },33);
+  function hideCross(){V.cross=null;const z=$("zone");if(z)z.classList.remove("on");}
   function fireNav(){
-    if(activeNav)resolveNav(null,null);
+    if(activeNav)resolveNav(null,null,"passed");
     const ans=pick(["L","R"]);
     const conf=P.conflict&&Math.random()<0.4;
     const shown=conf?(ans==="L"?"R":"L"):ans;
     $("nArr").textContent=DIR[shown].arr;
-    $("nSay").textContent=DIR[ans].say+"です";
-    $("nDist").textContent=conf?"⚠️ことばが正解！":"この先";
-    const me={ans};activeNav=me;
-    later(P.navT,()=>{if(activeNav===me)resolveNav(null,null);});
+    $("nSay").textContent="この先 "+DIR[ans].say+"です";
+    $("nDist").textContent=conf?"⚠️ことばが正解！":"300m";
+    sndTick();
+    const me={ans,t0:performance.now(),inZone:false,iv:null};activeNav=me;
+    V.cross={t0:me.t0,dur:P.appr};
+    me.iv=setInterval(()=>{
+      if(session!==sess||activeNav!==me||ended){clearInterval(me.iv);return;}
+      const p=(performance.now()-me.t0)/P.appr;
+      if(p>=1.12){resolveNav(null,null,"passed");return;}
+      if(!conf)$("nDist").textContent=Math.max(0,Math.round((1-Math.min(p,1))*30))*10+"m";
+      const z=p>=P.ws&&p<=1.06;
+      if(z!==me.inZone){me.inZone=z;$("zone").classList.toggle("on",z);}
+    },40);
   }
-  function resolveNav(pk,btn){
-    const ok=pk===activeNav.ans;activeNav=null;bump();mark(ok);
+  function resolveNav(pk,btn,why){
+    const me=activeNav;activeNav=null;
+    if(me.iv)clearInterval(me.iv);
+    const p=(performance.now()-me.t0)/P.appr;
+    let ok=false;
+    if(why!=="passed"){
+      if(p<P.ws)why="early";
+      else if(pk===me.ans){ok=true;why="ok";}
+      else why="wrongdir";
+    }
+    bump();mark(ok);
     if(btn)pressFx(btn,ok);
-    $("nArr").textContent=ok?"✅":"❌";$("nSay").textContent=ok?"ナイス！":"うーん…";$("nDist").textContent="";
-    later(500,()=>{if(!activeNav&&!ended){$("nArr").textContent="🚗";$("nSay").textContent="走行中…";}});
+    hideCross();
+    if(ok){
+      const sc=$("scene");
+      sc.classList.add(me.ans==="L"?"turnL":"turnR");
+      later(620,()=>{if(!sc.isConnected)return;sc.style.transition="none";
+        sc.classList.remove("turnL","turnR");void sc.offsetWidth;sc.style.transition="";});
+      $("nArr").textContent="✅";$("nSay").textContent="うまく曲がれた！";$("nDist").textContent="";
+    }else{
+      const msg={early:["🫣","はやい！手前の角だった…"],wrongdir:["↩️","逆にまがっちゃった…"],passed:["😵","通り過ぎた…"]}[why];
+      $("nArr").textContent=msg[0];$("nSay").textContent=msg[1];$("nDist").textContent="";
+    }
+    later(700,()=>{if(!activeNav&&!ended&&$("nArr")){$("nArr").textContent="🚗";$("nSay").textContent="走行中…";}});
   }
   // ---- 信号・歩行者 ----
   function fireSig(){
     if(activeSig)resolveSig(false,null);
     const ped=P.ped&&Math.random()<0.5;
-    $("sigE").textContent=ped?"🚶":"🔴";
-    $("sigT").textContent=ped?"ひと！":"しんごう！";
-    $("sigBox").style.display="block";
-    const me={};activeSig=me;
-    later(P.sigT,()=>{if(activeSig===me)resolveSig(false,null);});
+    const me={ped,t0:performance.now(),dur:P.sigT+1100};
+    activeSig=me;V.sig=me;cv.dataset.sig="1";sndTick();
+    later(me.dur,()=>{if(activeSig===me)resolveSig(false,null);});
   }
   function resolveSig(ok,btn){
-    activeSig=null;$("sigBox").style.display="none";bump();mark(ok);
+    activeSig=null;V.sig=null;delete cv.dataset.sig;bump();mark(ok);
     if(btn)pressFx(btn,ok);
   }
   // ---- 目印 ----
   function fireLand(ev){
-    const s=document.createElement("span");s.className="lmPop";s.textContent=ev.em;
-    s.style[Math.random()<0.5?"left":"right"]="12%";
-    stage.querySelector(".roadView").appendChild(s);
-    later(1300,()=>s.remove());
+    V.lands.push({t0:performance.now(),dur:2100,em:ev.em,side:Math.random()<0.5?-1:1});
   }
   // ---- 入力 ----
   row.addEventListener("click",e=>{
@@ -846,7 +986,7 @@ RUN.multi=function(level){
   });});
   later(tEnd,()=>{
     ended=true;
-    if(activeNav)resolveNav(null,null);
+    if(activeNav)resolveNav(null,null,"passed");
     if(activeSig)resolveSig(false,null);
     if(!P.land)return finishGame();
     // ---- 数えていた？の質問 ----
