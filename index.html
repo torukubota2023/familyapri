@@ -118,6 +118,14 @@
   .naviBox .say{font-family:"Zen Maru Gothic",sans-serif;font-weight:700;font-size:16px;margin-top:2px}
   .naviBox .dist{font-size:12px;color:var(--sun);font-weight:700;font-variant-numeric:tabular-nums}
   .naviBox.hiddenMsg .say{color:var(--muted);font-weight:500;font-size:13px}
+  .sigBox{position:absolute;top:14px;right:10px;background:rgba(20,17,44,.94);border:1.5px solid var(--bad);
+          border-radius:14px;padding:5px 10px;text-align:center;animation:sigPulse .45s ease infinite alternate;z-index:2}
+  .sigBox .se{font-size:26px;line-height:1.1}
+  .sigBox .st{font-size:10px;color:var(--bad);font-weight:700}
+  @keyframes sigPulse{from{transform:scale(1)}to{transform:scale(1.09)}}
+  @media (prefers-reduced-motion: reduce){.sigBox{animation:none}}
+  .lmPop{position:absolute;bottom:28%;font-size:34px;animation:lmGrow 1.25s ease-in forwards;pointer-events:none}
+  @keyframes lmGrow{from{transform:scale(.3);opacity:0}25%{opacity:1}80%{opacity:1}to{transform:scale(1.25);opacity:0}}
 
   /* 地図ビュー（モード2） */
   .mapWrap{flex:1;min-height:0;display:grid;place-items:center}
@@ -190,7 +198,7 @@
       <p>1日1プレイでOK。「頭の中の地図」は、才能じゃなくて筋トレで育ちます。</p>
       <div class="chips">
         <span class="chip">🔥 <b id="streakN">0</b>日連続</span>
-        <span class="chip">⭐ <b id="starN">0</b> / 60</span>
+        <span class="chip">⭐ <b id="starN">0</b> / <span id="starMax">75</span></span>
       </div>
     </div>
     <div class="modes" id="modeList"></div>
@@ -309,6 +317,10 @@ const MODES=[
   desc:"曲がったあと、自分がどっちを向いてる？ 頭の中の地図の第一歩",
   full:"車が曲がるようすが順番に流れます。終わったとき、<b>スタートの向きとくらべて</b>いまどっち向き？ 慣れてきたら「スタート地点は車から見てどっち？」も出ます。帰り道に迷わなくなる練習。",
   lvNames:["2回まがる","3回まがる","4回まがる","スタートはどっち？","5回+スピード"]},
+ {id:"multi",icon:"🚦",color:"#7E3A55",name:"ながら運転",
+  desc:"案内も信号も目印も、ぜんぶ同時。実際の運転はマルチタスク",
+  full:"本番の運転は<b>いくつも同時</b>。ナビの案内には ⬅➡、🔴信号や🚶歩行者が出たら<b>すぐ🛑ブレーキ</b>。レベルが上がると、🏪の数を<b>こっそり数えながら</b>になり、案内と信号が同時に来ます。ほかの4モードで鍛えた力の総しあげ。",
+  lvNames:["ナビ+信号","歩行者もいる","お店もかぞえる","同時に来る","本番なみ"]},
 ];
 const LV_MAX=5;
 function getStars(m,l){return (S.stars[m]&&S.stars[m][l])||0;}
@@ -338,6 +350,7 @@ function renderHome(){
   $("streakN").textContent=S.streak.count;
   let total=0;MODES.forEach(m=>{for(let l=1;l<=LV_MAX;l++)total+=getStars(m.id,l);});
   $("starN").textContent=total;
+  $("starMax").textContent=MODES.length*LV_MAX*3;
   let recoId=MODES[0].id,min=Infinity;
   MODES.forEach(m=>{const p=S.plays[m.id]||0;if(p<min){min=p;recoId=m.id;}});
   const list=$("modeList");list.innerHTML="";
@@ -740,6 +753,116 @@ RUN.where=function(level){
     later(900,play);
   }
   next();
+};
+
+/* ================= モード5：ながら運転 ================= */
+RUN.multi=function(level){
+  const P=[
+    {nav:8, sig:2,ped:false,land:0,decoy:0,navT:2400,sigT:1900,gap:[1900,900],overlap:false,conflict:false},
+    {nav:8, sig:4,ped:true, land:0,decoy:0,navT:2200,sigT:1700,gap:[1700,800],overlap:false,conflict:false},
+    {nav:8, sig:3,ped:true, land:3,decoy:4,navT:2200,sigT:1700,gap:[1500,800],overlap:false,conflict:false},
+    {nav:10,sig:4,ped:true, land:3,decoy:4,navT:2000,sigT:1600,gap:[1300,700],overlap:true, conflict:false},
+    {nav:12,sig:5,ped:true, land:4,decoy:5,navT:1800,sigT:1400,gap:[1100,600],overlap:true, conflict:true},
+  ][level-1];
+  const TARGET="🏪";
+  // ---- タイムライン生成 ----
+  let bag=[];
+  for(let i=0;i<P.nav;i++)bag.push({type:"nav"});
+  for(let i=0;i<P.land;i++)bag.push({type:"land",em:TARGET,hit:true});
+  for(let i=0;i<P.decoy;i++)bag.push({type:"land",em:pick(["🍞","📮","🌸","🐶","💈"]),hit:false});
+  if(!P.overlap)for(let i=0;i<P.sig;i++)bag.push({type:"sig"});
+  bag=shuffle(bag);
+  let t=2000;
+  bag.forEach(ev=>{ev.t=t;t+=P.gap[0]+rnd(P.gap[1]);});
+  if(P.overlap){
+    const navs=bag.filter(e=>e.type==="nav");
+    for(let i=0;i<P.sig;i++)bag.push({type:"sig",t:pick(navs).t+400+rnd(500)});
+  }
+  bag.sort((a,b)=>a.t-b.t);
+  const tEnd=bag[bag.length-1].t+3200;
+  const planned=P.nav+P.sig+(P.land?1:0);
+  // ---- 画面 ----
+  const stage=$("stage");
+  stage.innerHTML=`<p class="prompt">ナビは ⬅➡、🔴や🚶が出たら<b>🛑ブレーキ</b>${P.land?"。🏪の数も<b>こっそり数えて</b>":""}！</p>
+    <div class="roadView"><div class="sunGlow"></div><div class="road"></div><div class="lane"></div>
+      <div class="naviBox" id="navi"><div class="arr" id="nArr">🚗</div><div class="say" id="nSay">まもなく出発…</div><div class="dist" id="nDist"></div></div>
+      <div class="sigBox" id="sigBox" style="display:none"><div class="se" id="sigE"></div><div class="st" id="sigT"></div></div>
+    </div>`;
+  const row=ansRow([{g:"⬅️",label:"左折",key:"L"},{g:"🛑",label:"ブレーキ",key:"B"},{g:"➡️",label:"右折",key:"R"}]);
+  setTimerBar(tEnd,null);
+  let activeNav=null,activeSig=null,done=0,ended=false;
+  setCount(0,planned);
+  function bump(){done++;setCount(Math.min(done,planned),planned);}
+  function pressFx(b,ok){b.classList.add(ok?"good":"badPick");later(280,()=>b.classList.remove("good","badPick"));}
+  // ---- ナビ案内 ----
+  function fireNav(){
+    if(activeNav)resolveNav(null,null);
+    const ans=pick(["L","R"]);
+    const conf=P.conflict&&Math.random()<0.4;
+    const shown=conf?(ans==="L"?"R":"L"):ans;
+    $("nArr").textContent=DIR[shown].arr;
+    $("nSay").textContent=DIR[ans].say+"です";
+    $("nDist").textContent=conf?"⚠️ことばが正解！":"この先";
+    const me={ans};activeNav=me;
+    later(P.navT,()=>{if(activeNav===me)resolveNav(null,null);});
+  }
+  function resolveNav(pk,btn){
+    const ok=pk===activeNav.ans;activeNav=null;bump();mark(ok);
+    if(btn)pressFx(btn,ok);
+    $("nArr").textContent=ok?"✅":"❌";$("nSay").textContent=ok?"ナイス！":"うーん…";$("nDist").textContent="";
+    later(500,()=>{if(!activeNav&&!ended){$("nArr").textContent="🚗";$("nSay").textContent="走行中…";}});
+  }
+  // ---- 信号・歩行者 ----
+  function fireSig(){
+    if(activeSig)resolveSig(false,null);
+    const ped=P.ped&&Math.random()<0.5;
+    $("sigE").textContent=ped?"🚶":"🔴";
+    $("sigT").textContent=ped?"ひと！":"しんごう！";
+    $("sigBox").style.display="block";
+    const me={};activeSig=me;
+    later(P.sigT,()=>{if(activeSig===me)resolveSig(false,null);});
+  }
+  function resolveSig(ok,btn){
+    activeSig=null;$("sigBox").style.display="none";bump();mark(ok);
+    if(btn)pressFx(btn,ok);
+  }
+  // ---- 目印 ----
+  function fireLand(ev){
+    const s=document.createElement("span");s.className="lmPop";s.textContent=ev.em;
+    s.style[Math.random()<0.5?"left":"right"]="12%";
+    stage.querySelector(".roadView").appendChild(s);
+    later(1300,()=>s.remove());
+  }
+  // ---- 入力 ----
+  row.addEventListener("click",e=>{
+    const b=e.target.closest(".ansBtn");if(!b||ended)return;
+    const k=b.dataset.key;
+    if(k==="B"){ if(activeSig)resolveSig(true,b); else{mark(false);pressFx(b,false);} }
+    else{ if(activeNav)resolveNav(k,b); else{mark(false);pressFx(b,false);} }
+  });
+  // ---- スケジュール実行 ----
+  bag.forEach(ev=>{later(ev.t,()=>{
+    if(ev.type==="nav")fireNav();else if(ev.type==="sig")fireSig();else fireLand(ev);
+  });});
+  later(tEnd,()=>{
+    ended=true;
+    if(activeNav)resolveNav(null,null);
+    if(activeSig)resolveSig(false,null);
+    if(!P.land)return finishGame();
+    // ---- 数えていた？の質問 ----
+    stage.innerHTML=`<p class="prompt">おつかれさま！ ではテスト</p>
+      <div class="bigCard"><span class="emoji">🏪</span>
+      <span class="label">コンビニ、何回見えた？</span>
+      <span class="note">運転しながら数えられていたかな</span></div>`;
+    const n=P.land;
+    const opts=shuffle([n-1,n,n+1,n+2]);
+    const qrow=ansRow(opts.map(o=>({g:"",label:o+"回",key:String(o)})),"grid4");
+    let armed=true;
+    function settle(pk){if(!armed)return;armed=false;stopTimerBar();
+      mark(pk===String(n));lockRow(qrow,pk,String(n));later(900,finishGame);}
+    qrow.addEventListener("click",e=>{const b=e.target.closest(".ansBtn");if(b)settle(b.dataset.key);});
+    setTimerBar(8000,()=>settle(null));
+  });
 };
 
 /* ================= 起動 ================= */
