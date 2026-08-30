@@ -1,0 +1,743 @@
+<title>みちセンス</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@700;900&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<style>
+  /* ---- 夕暮れドライブ・パレット（単一テーマ。全色を明示的に塗る） ---- */
+  :root{
+    --bg:#221E44; --bg2:#2A2557; --card:#2E2960; --card2:#3A3378;
+    --ink:#F2EFFF; --muted:#ABA3DC; --faint:#7D75B8; --line:#443D86;
+    --coral:#FF8A7A; --coral-deep:#F26B5B; --mint:#5CE0BE; --sun:#FFD166;
+    --bad:#FF6B81; --road:#39336E; --shadow:0 10px 30px rgba(10,8,30,.45);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    background:linear-gradient(180deg,#1C1840 0%, var(--bg) 40%, #262052 100%);
+    color:var(--ink);
+    font-family:"Zen Kaku Gothic New","Hiragino Sans",sans-serif;
+    font-size:16px; line-height:1.65;
+    min-height:100dvh;
+    user-select:none;-webkit-user-select:none;
+  }
+  #app{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;
+       padding:calc(env(safe-area-inset-top) + 10px) 16px calc(env(safe-area-inset-bottom) + 18px);}
+  h1,h2,h3,.disp{font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN",sans-serif;font-weight:900;letter-spacing:.02em}
+  button{font-family:inherit;color:inherit;background:none;border:none;cursor:pointer;touch-action:manipulation}
+  .screen{display:none;flex-direction:column;flex:1;min-height:0}
+  .screen.on{display:flex}
+
+  /* ---- ヘッダー ---- */
+  header{display:flex;align-items:center;justify-content:space-between;padding:6px 2px 14px}
+  .logo{display:flex;align-items:baseline;gap:8px}
+  .logo .mark{font-size:22px}
+  .logo h1{font-size:22px}
+  .logo small{color:var(--muted);font-size:11px;font-weight:500;letter-spacing:.08em}
+  #soundBtn{width:40px;height:40px;border-radius:14px;background:var(--card);font-size:17px;box-shadow:var(--shadow)}
+
+  /* ---- ホーム ---- */
+  .hero{background:linear-gradient(135deg,var(--card2),var(--card));border:1px solid var(--line);
+        border-radius:22px;padding:18px 18px 16px;box-shadow:var(--shadow);margin-bottom:16px}
+  .hero h2{font-size:19px;margin-bottom:4px}
+  .hero p{color:var(--muted);font-size:13px}
+  .chips{display:flex;gap:8px;margin-top:12px}
+  .chip{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.07);border:1px solid var(--line);
+        border-radius:999px;padding:5px 12px;font-size:13px;font-weight:700}
+  .chip b{font-variant-numeric:tabular-nums}
+  .modes{display:flex;flex-direction:column;gap:12px}
+  .modeCard{display:flex;align-items:center;gap:14px;text-align:left;background:var(--card);
+            border:1px solid var(--line);border-radius:20px;padding:14px 16px;box-shadow:var(--shadow);
+            transition:transform .1s}
+  .modeCard:active{transform:scale(.98)}
+  .modeCard .icon{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;font-size:26px;flex:none}
+  .modeCard .txt{flex:1;min-width:0}
+  .modeCard h3{font-size:16px;display:flex;align-items:center;gap:8px}
+  .modeCard p{color:var(--muted);font-size:12px;line-height:1.5;margin-top:2px}
+  .reco{font-size:10px;font-weight:700;color:#3A2430;background:var(--sun);border-radius:999px;padding:1px 8px}
+  .dots{display:flex;gap:5px;margin-top:7px}
+  .dot{width:16px;height:6px;border-radius:3px;background:var(--line)}
+  .dot.s1{background:var(--faint)} .dot.s2{background:var(--mint)} .dot.s3{background:var(--sun)}
+  .tips{margin-top:18px;background:var(--card);border:1px solid var(--line);border-radius:20px;overflow:hidden}
+  .tips summary{list-style:none;padding:14px 16px;font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px}
+  .tips summary::-webkit-details-marker{display:none}
+  .tips ul{padding:0 18px 16px 18px;list-style:none;display:flex;flex-direction:column;gap:10px}
+  .tips li{font-size:13px;color:var(--muted);padding-left:20px;position:relative}
+  .tips li::before{content:"🌙";position:absolute;left:0;font-size:11px;top:2px}
+  .tips li b{color:var(--ink)}
+  footer{margin-top:auto;padding-top:20px;text-align:center;color:var(--faint);font-size:11px}
+
+  /* ---- レベル選択 ---- */
+  .backRow{display:flex;align-items:center;gap:10px;padding:2px 0 14px}
+  .backBtn{width:40px;height:40px;border-radius:14px;background:var(--card);font-size:18px;flex:none;box-shadow:var(--shadow)}
+  .backRow h2{font-size:18px}
+  .lvIntro{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 16px;margin-bottom:14px}
+  .lvIntro p{font-size:13px;color:var(--muted)}
+  .lvIntro p b{color:var(--ink)}
+  .lvList{display:flex;flex-direction:column;gap:10px}
+  .lvBtn{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);
+         border-radius:16px;padding:13px 16px;text-align:left;box-shadow:var(--shadow)}
+  .lvBtn:active{transform:scale(.98)}
+  .lvBtn .no{font-family:"Zen Maru Gothic",sans-serif;font-weight:900;font-size:17px;width:60px;flex:none}
+  .lvBtn .name{flex:1;font-size:13px;color:var(--muted)}
+  .lvBtn .stars{font-size:14px;letter-spacing:2px;flex:none}
+  .lvBtn.locked{opacity:.45}
+  .lvBtn.locked .stars{font-size:15px}
+
+  /* ---- ゲーム画面 ---- */
+  .gHead{display:flex;align-items:center;gap:10px;padding:2px 0 10px}
+  .gHead .info{flex:1;min-width:0}
+  .gHead h2{font-size:16px}
+  .gHead .sub{font-size:11px;color:var(--muted)}
+  .qCount{font-variant-numeric:tabular-nums;font-size:13px;font-weight:700;color:var(--muted);flex:none}
+  .timerWrap{height:6px;border-radius:3px;background:var(--line);overflow:hidden;margin-bottom:14px}
+  .timerBar{height:100%;width:100%;background:linear-gradient(90deg,var(--mint),var(--sun));border-radius:3px}
+  #stage{flex:1;min-height:0;display:flex;flex-direction:column}
+  .prompt{text-align:center;font-family:"Zen Maru Gothic",sans-serif;font-weight:700;font-size:15px;color:var(--muted);margin-bottom:10px}
+  .prompt b{color:var(--ink)}
+
+  /* 運転席ビュー（モード1） */
+  .roadView{position:relative;flex:1;min-height:190px;border-radius:20px;overflow:hidden;
+            background:linear-gradient(180deg,#3B2E63 0%,#513A6E 34%,#2E295C 34%);border:1px solid var(--line)}
+  .roadView .sunGlow{position:absolute;left:50%;top:26%;width:70px;height:70px;transform:translate(-50%,-50%);
+            border-radius:50%;background:radial-gradient(circle,rgba(255,209,102,.85),rgba(255,138,122,.28) 55%,transparent 70%)}
+  .roadView .road{position:absolute;left:50%;bottom:0;width:340px;height:66%;transform:translateX(-50%);
+            background:var(--road);clip-path:polygon(41% 0,59% 0,100% 100%,0 100%)}
+  .roadView .lane{position:absolute;left:50%;bottom:0;width:7px;height:66%;transform:translateX(-50%);
+            background:repeating-linear-gradient(180deg,var(--sun) 0 16px,transparent 16px 34px);opacity:.85;
+            clip-path:polygon(38% 0,62% 0,100% 100%,0 100%)}
+  @keyframes laneMove{from{background-position-y:0}to{background-position-y:34px}}
+  .roadView .lane{animation:laneMove .5s linear infinite}
+  @media (prefers-reduced-motion: reduce){.roadView .lane{animation:none}}
+  .naviBox{position:absolute;left:50%;top:14px;transform:translateX(-50%);min-width:220px;
+           background:rgba(20,17,44,.92);border:1.5px solid var(--sun);border-radius:16px;
+           padding:10px 16px;text-align:center;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+  .naviBox .arr{font-size:34px;line-height:1.1}
+  .naviBox .say{font-family:"Zen Maru Gothic",sans-serif;font-weight:700;font-size:16px;margin-top:2px}
+  .naviBox .dist{font-size:12px;color:var(--sun);font-weight:700;font-variant-numeric:tabular-nums}
+  .naviBox.hiddenMsg .say{color:var(--muted);font-weight:500;font-size:13px}
+
+  /* 地図ビュー（モード2） */
+  .mapWrap{flex:1;min-height:0;display:grid;place-items:center}
+  .mapWrap svg{width:min(88vw,330px);height:auto;display:block}
+
+  /* カード提示（モード3・4） */
+  .bigCard{flex:1;min-height:170px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+           gap:8px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px;text-align:center}
+  .bigCard .emoji{font-size:56px;line-height:1.15}
+  .bigCard .label{font-family:"Zen Maru Gothic",sans-serif;font-weight:900;font-size:20px}
+  .bigCard .note{font-size:12px;color:var(--muted)}
+  .memoList{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:4px 2px}
+  .memoStep{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);
+            border-radius:14px;padding:10px 14px}
+  .memoStep .n{font-size:12px;color:var(--faint);font-weight:700;width:16px;font-variant-numeric:tabular-nums}
+  .memoStep .e{font-size:24px}
+  .memoStep .t{font-weight:700;font-size:15px}
+  .memoStep .d{margin-left:auto;font-family:"Zen Maru Gothic",sans-serif;font-weight:900;font-size:15px}
+  .memoStep .d.L{color:var(--mint)} .memoStep .d.R{color:var(--coral)}
+
+  /* 回答ボタン */
+  .answers{display:flex;gap:10px;padding-top:14px}
+  .ansBtn{flex:1;min-height:72px;border-radius:18px;background:var(--card2);border:1px solid var(--line);
+          display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+          font-family:"Zen Maru Gothic",sans-serif;font-weight:900;font-size:15px;box-shadow:var(--shadow);
+          transition:transform .08s}
+  .ansBtn .g{font-size:24px;line-height:1.1}
+  .ansBtn:active{transform:scale(.95)}
+  .ansBtn:disabled{opacity:.55}
+  .ansBtn.good{background:var(--mint);color:#14322A;border-color:var(--mint)}
+  .ansBtn.badPick{background:var(--bad);color:#fff;border-color:var(--bad)}
+  .answers.grid4{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .fbFlash{position:fixed;inset:0;pointer-events:none;opacity:0;transition:opacity .25s}
+  .fbFlash.good{background:radial-gradient(circle at 50% 60%,rgba(92,224,190,.28),transparent 60%);opacity:1}
+  .fbFlash.bad{background:radial-gradient(circle at 50% 60%,rgba(255,107,129,.30),transparent 60%);opacity:1}
+  .primaryBtn{min-height:56px;border-radius:18px;background:linear-gradient(135deg,var(--coral),var(--coral-deep));
+          color:#3B1712;font-family:"Zen Maru Gothic",sans-serif;font-weight:900;font-size:16px;
+          box-shadow:var(--shadow);width:100%}
+  .primaryBtn:active{transform:scale(.98)}
+  .ghostBtn{min-height:52px;border-radius:18px;background:var(--card);border:1px solid var(--line);
+          font-weight:700;font-size:14px;width:100%;color:var(--muted)}
+
+  /* ---- 結果 ---- */
+  .resultBox{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px}
+  .resultBox .starRow{font-size:46px;letter-spacing:6px;min-height:60px}
+  .resultBox h2{font-size:22px}
+  .resultBox .score{font-size:15px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .resultBox .msg{font-size:13.5px;color:var(--muted);max-width:300px;line-height:1.7}
+  .resultBtns{display:flex;flex-direction:column;gap:10px;padding-top:10px}
+  @keyframes pop{0%{transform:scale(.2);opacity:0}70%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+  .starRow span{display:inline-block;animation:pop .45s cubic-bezier(.2,1.4,.4,1) both}
+  .starRow span:nth-child(2){animation-delay:.18s}.starRow span:nth-child(3){animation-delay:.36s}
+  @media (prefers-reduced-motion: reduce){.starRow span{animation:none}}
+  .confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden}
+  .confetti i{position:absolute;top:-24px;font-style:normal;font-size:18px;animation:fall 2.4s ease-in forwards}
+  @keyframes fall{to{transform:translateY(110vh) rotate(540deg);opacity:.2}}
+  @media (prefers-reduced-motion: reduce){.confetti{display:none}}
+</style>
+
+<div id="app">
+  <header>
+    <div class="logo"><span class="mark">🚗</span><h1>みちセンス</h1><small>DRIVE TRAINING</small></div>
+    <button id="soundBtn" aria-label="効果音の切りかえ">🔊</button>
+  </header>
+
+  <!-- ホーム -->
+  <section id="scrHome" class="screen on">
+    <div class="hero">
+      <h2 id="greet">きょうも、いってらっしゃい 🌆</h2>
+      <p>1日1プレイでOK。「頭の中の地図」は、才能じゃなくて筋トレで育ちます。</p>
+      <div class="chips">
+        <span class="chip">🔥 <b id="streakN">0</b>日連続</span>
+        <span class="chip">⭐ <b id="starN">0</b> / 60</span>
+      </div>
+    </div>
+    <div class="modes" id="modeList"></div>
+    <details class="tips">
+      <summary>🧿 おまもりメモ — 実際の運転で使えるコツ</summary>
+      <ul>
+        <li><b>ナビの前に自分で言う。</b>案内が出たら「次、右ね」と<b>声に出す</b>。声にした指示はパニックに強い。</li>
+        <li><b>距離じゃなく「◯個目」で数える。</b>「300m先」は無視して「信号2つ目を右」に自分で変換。あなたの得意な数え方が正解。</li>
+        <li><b>出発前に曲がる回数だけ覚える。</b>「右・左・右の3回」とリズムで覚えると、途中で迷子になりにくい。</li>
+        <li><b>通り過ぎてもOKと決めておく。</b>ナビは必ず引き直してくれる。「間違えても着く」と知っているだけで焦りが減る。</li>
+        <li><b>帰り道は行きと逆順。</b>「行きに右なら帰りは左」。ゲームの「いまどこ？」はこの練習です。</li>
+      </ul>
+    </details>
+    <footer>進み具合はこのiPhoneのSafariに保存されます</footer>
+  </section>
+
+  <!-- レベル選択 -->
+  <section id="scrLevels" class="screen">
+    <div class="backRow"><button class="backBtn" data-go="home">←</button><h2 id="lvTitle"></h2></div>
+    <div class="lvIntro"><p id="lvDesc"></p></div>
+    <div class="lvList" id="lvList"></div>
+  </section>
+
+  <!-- ゲーム -->
+  <section id="scrGame" class="screen">
+    <div class="gHead">
+      <button class="backBtn" data-go="quit">←</button>
+      <div class="info"><h2 id="gTitle"></h2><div class="sub" id="gSub"></div></div>
+      <div class="qCount" id="gCount"></div>
+    </div>
+    <div class="timerWrap"><div class="timerBar" id="timerBar"></div></div>
+    <div id="stage"></div>
+    <div id="controls"></div>
+  </section>
+
+  <!-- 結果 -->
+  <section id="scrResult" class="screen">
+    <div class="resultBox">
+      <div class="starRow" id="rStars"></div>
+      <h2 id="rTitle"></h2>
+      <div class="score" id="rScore"></div>
+      <p class="msg" id="rMsg"></p>
+    </div>
+    <div class="resultBtns">
+      <button class="primaryBtn" id="rNext"></button>
+      <button class="ghostBtn" id="rRetry">もういちど同じレベル</button>
+      <button class="ghostBtn" data-go="home">ホームへもどる</button>
+    </div>
+  </section>
+
+  <div class="fbFlash" id="fbFlash"></div>
+</div>
+
+<script>
+"use strict";
+/* ================= 保存 ================= */
+const KEY="michisense_v1";
+function loadState(){
+  try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.stars)return s;}catch(e){}
+  return {stars:{},plays:{},streak:{last:"",count:0},sound:true};
+}
+function saveState(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+const S=loadState();
+
+/* ================= 効果音 ================= */
+let AC=null;
+function beep(seq){ // seq:[ [freq,dur,delay], ... ]
+  if(!S.sound)return;
+  try{
+    AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+    if(AC.state==="suspended")AC.resume();
+    const t0=AC.currentTime;
+    seq.forEach(([f,d,dl])=>{
+      const o=AC.createOscillator(),g=AC.createGain();
+      o.type="sine";o.frequency.value=f;
+      g.gain.setValueAtTime(0.0001,t0+dl);
+      g.gain.exponentialRampToValueAtTime(0.16,t0+dl+0.015);
+      g.gain.exponentialRampToValueAtTime(0.0001,t0+dl+d);
+      o.connect(g).connect(AC.destination);o.start(t0+dl);o.stop(t0+dl+d+0.05);
+    });
+  }catch(e){}
+}
+const sndGood=()=>beep([[660,.12,0],[880,.16,.1]]);
+const sndBad =()=>beep([[220,.22,0],[180,.22,.08]]);
+const sndTick=()=>beep([[520,.06,0]]);
+const sndWin =()=>beep([[523,.14,0],[659,.14,.13],[784,.14,.26],[1047,.3,.39]]);
+
+/* ================= 共通ユーティリティ ================= */
+const $=id=>document.getElementById(id);
+const rnd=n=>Math.floor(Math.random()*n);
+const pick=a=>a[rnd(a.length)];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]];}return a;};
+let session=0;
+const timers=[];
+function later(ms,fn){const s=session;const id=setTimeout(()=>{if(s===session)fn();},ms);timers.push(id);}
+function clearTimers(){timers.forEach(clearTimeout);timers.length=0;}
+function flash(kind){const f=$("fbFlash");f.className="fbFlash "+kind;later(320,()=>{f.className="fbFlash";});}
+function esc(s){return s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function todayStr(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+
+/* ================= モード定義 ================= */
+const MODES=[
+ {id:"reflex",icon:"🫨",color:"#5A3A6E",name:"とっさの左右",
+  desc:"「この先、右です」に迷わず反応。急な案内パニックの特効薬",
+  full:"ナビ画面に案内が出ます。<b>正しい方向のボタン</b>をすばやくタップ。レベルが上がるほど時間が短く、ひっかけも増えます。実際のナビで焦らないための反射トレーニング。",
+  lvNames:["ことばと矢印","音声案内ふう","ひっかけ矢印","覚えてから曲がる","ぜんぶミックス"]},
+ {id:"rotate",icon:"🧭",color:"#3A4E7E",name:"ちずクルクル",
+  desc:"北が上の地図と、運転席から見た左右をつなぐ。いちばんの核心",
+  full:"ナビとおなじ<b>「北が上」の地図</b>に、車と目的地の★が出ます。<b>運転席から見て</b>右折・直進・左折のどれかを答えてね。車が下向き（南向き）のときが最難関。ここが解けると世界が変わります。",
+  lvNames:["車は上向き","車はよこ向き","車は下向き","向きはランダム","お店はどっち？"]},
+ {id:"memory",icon:"🏪",color:"#6E4A3A",name:"みちじゅんメモ",
+  desc:"「コンビニを右、パン屋を左」— 得意の目印作戦をもっと強く",
+  full:"目印と曲がる方向のリストを覚えて、そのとおりに運転！ あなたがいつも使っている<b>目印で覚える作戦</b>は正攻法です。覚えられる数を3個→6個に伸ばそう。途中に関係ないお店（ひっかけ）も出ます。",
+  lvNames:["3つの目印","4つの目印","ひっかけ登場","5つ+ひっかけ","6つ+時間制限"]},
+ {id:"where",icon:"🐣",color:"#3A6E5A",name:"いまどこ？",
+  desc:"曲がったあと、自分がどっちを向いてる？ 頭の中の地図の第一歩",
+  full:"車が曲がるようすが順番に流れます。終わったとき、<b>スタートの向きとくらべて</b>いまどっち向き？ 慣れてきたら「スタート地点は車から見てどっち？」も出ます。帰り道に迷わなくなる練習。",
+  lvNames:["2回まがる","3回まがる","4回まがる","スタートはどっち？","5回+スピード"]},
+];
+const LV_MAX=5;
+function getStars(m,l){return (S.stars[m]&&S.stars[m][l])||0;}
+function unlocked(m,l){return l===1||getStars(m,l-1)>0;}
+
+/* ================= 画面遷移 ================= */
+function show(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("on"));
+  $(id).classList.add("on");
+  window.scrollTo(0,0);
+}
+function goHome(){session++;clearTimers();renderHome();show("scrHome");}
+document.querySelectorAll("[data-go]").forEach(b=>{
+  b.addEventListener("click",()=>{
+    if(b.dataset.go==="home"||b.dataset.go==="quit")goHome();
+  });
+});
+$("soundBtn").addEventListener("click",()=>{
+  S.sound=!S.sound;saveState();renderSound();if(S.sound)sndTick();
+});
+function renderSound(){$("soundBtn").textContent=S.sound?"🔊":"🔇";}
+
+/* ================= ホーム描画 ================= */
+function renderHome(){
+  const h=new Date().getHours();
+  $("greet").textContent = h<5?"おそくまでおつかれさま 🌙" : h<11?"おはよう、今日もいい道を ☀️" : h<17?"きょうも、いってらっしゃい 🚗" : "今夜もひと勝負どうぞ 🌆";
+  $("streakN").textContent=S.streak.count;
+  let total=0;MODES.forEach(m=>{for(let l=1;l<=LV_MAX;l++)total+=getStars(m.id,l);});
+  $("starN").textContent=total;
+  let recoId=MODES[0].id,min=Infinity;
+  MODES.forEach(m=>{const p=S.plays[m.id]||0;if(p<min){min=p;recoId=m.id;}});
+  const list=$("modeList");list.innerHTML="";
+  MODES.forEach(m=>{
+    const btn=document.createElement("button");btn.className="modeCard";
+    let dots="";
+    for(let l=1;l<=LV_MAX;l++){const s=getStars(m.id,l);dots+=`<span class="dot ${s>=3?"s3":s>=2?"s2":s>=1?"s1":""}"></span>`;}
+    btn.innerHTML=`<span class="icon" style="background:${m.color}">${m.icon}</span>
+      <span class="txt"><h3>${m.name}${m.id===recoId?'<span class="reco">きょうのおすすめ</span>':""}</h3>
+      <p>${esc(m.desc)}</p><span class="dots">${dots}</span></span>`;
+    btn.addEventListener("click",()=>openLevels(m));
+    list.appendChild(btn);
+  });
+  renderSound();
+}
+
+/* ================= レベル選択 ================= */
+let curMode=null;
+function openLevels(m){
+  curMode=m;
+  $("lvTitle").textContent=m.icon+" "+m.name;
+  $("lvDesc").innerHTML=m.full;
+  const list=$("lvList");list.innerHTML="";
+  for(let l=1;l<=LV_MAX;l++){
+    const s=getStars(m.id,l),ok=unlocked(m.id,l);
+    const b=document.createElement("button");
+    b.className="lvBtn"+(ok?"":" locked");
+    b.innerHTML=`<span class="no">Lv.${l}</span><span class="name">${esc(m.lvNames[l-1])}</span>
+      <span class="stars">${ok?("⭐".repeat(s)+"☆".repeat(3-s)):"🔒"}</span>`;
+    if(ok)b.addEventListener("click",()=>startGame(m,l));
+    list.appendChild(b);
+  }
+  show("scrLevels");
+}
+
+/* ================= ゲーム共通 ================= */
+let G=null; // {mode,level,correct,total,round}
+function startGame(m,l){
+  session++;clearTimers();
+  G={mode:m,level:l,correct:0,total:0,round:0};
+  $("gTitle").textContent=m.icon+" "+m.name;
+  $("gSub").textContent="Lv."+l+"　"+m.lvNames[l-1];
+  setTimerBar(null);
+  show("scrGame");
+  RUN[m.id](l);
+}
+function setCount(i,n){$("gCount").textContent=i+" / "+n;}
+let timerTimeout=null;
+function setTimerBar(ms,onTimeout){
+  const bar=$("timerBar");
+  if(timerTimeout){clearTimeout(timerTimeout);timerTimeout=null;}
+  bar.style.transition="none";bar.style.width="100%";
+  if(ms==null){bar.style.opacity=".25";return;}
+  bar.style.opacity="1";
+  void bar.offsetWidth;
+  bar.style.transition="width "+ms+"ms linear";bar.style.width="0%";
+  const s=session;
+  timerTimeout=setTimeout(()=>{if(s===session&&onTimeout)onTimeout();},ms);
+  timers.push(timerTimeout);
+}
+function stopTimerBar(){
+  if(timerTimeout){clearTimeout(timerTimeout);timerTimeout=null;}
+  const bar=$("timerBar");
+  const w=getComputedStyle(bar).width;
+  bar.style.transition="none";bar.style.width=w;
+}
+function mark(ok){
+  G.total++;if(ok){G.correct++;sndGood();flash("good");}else{sndBad();flash("bad");}
+}
+function ansRow(btns,cls){ // btns:[{g,label,key}]
+  const c=$("controls");c.innerHTML="";
+  const row=document.createElement("div");row.className="answers"+(cls?" "+cls:"");
+  btns.forEach(b=>{
+    const el=document.createElement("button");el.className="ansBtn";
+    el.innerHTML=(b.g?`<span class="g">${b.g}</span>`:"")+`<span>${esc(b.label)}</span>`;
+    el.dataset.key=b.key;row.appendChild(el);
+  });
+  c.appendChild(row);
+  return row;
+}
+function lockRow(row,pickedKey,correctKey){
+  row.querySelectorAll(".ansBtn").forEach(b=>{
+    b.disabled=true;
+    if(b.dataset.key===correctKey)b.classList.add("good");
+    else if(b.dataset.key===pickedKey)b.classList.add("badPick");
+  });
+}
+function finishGame(){
+  session++;clearTimers();
+  const pct=G.total?G.correct/G.total:0;
+  const stars=pct>=0.9?3:pct>=0.7?2:pct>=0.5?1:0;
+  const m=G.mode.id,l=G.level;
+  S.stars[m]=S.stars[m]||{};
+  if(stars>(S.stars[m][l]||0))S.stars[m][l]=stars;
+  S.plays[m]=(S.plays[m]||0)+1;
+  const t=todayStr();
+  if(S.streak.last!==t){
+    const y=new Date();y.setDate(y.getDate()-1);
+    const ys=y.getFullYear()+"-"+String(y.getMonth()+1).padStart(2,"0")+"-"+String(y.getDate()).padStart(2,"0");
+    S.streak.count=(S.streak.last===ys)?S.streak.count+1:1;
+    S.streak.last=t;
+  }
+  saveState();
+  $("rStars").innerHTML="<span>"+(stars>=1?"⭐":"☆")+"</span><span>"+(stars>=2?"⭐":"☆")+"</span><span>"+(stars>=3?"⭐":"☆")+"</span>";
+  $("rTitle").textContent=stars===3?"かんぺき！":stars===2?"いいかんじ！":stars===1?"クリア！":"おしい！";
+  $("rScore").textContent=G.correct+" / "+G.total+" 問正解";
+  const msgs={
+    3:["この調子。次のレベルもきっといける🚗💨","運転席のあなたが強くなってる。すごい。","3つ星！ ご褒美にコンビニスイーツどうぞ🍮"],
+    2:["あと少しで3つ星。もう1回いく？","確実にセンス育ってます🌱","惜しい問題、どれだった？ 次は取れる。"],
+    1:["クリアは立派。くり返すほど速くなるよ","初見でこれなら上出来です","脳がちょっと汗かいた分だけ強くなった💪"],
+    0:["だいじょうぶ、最初はみんなここから。","1問でも合ってたら前進。もう1回だけどう？","難しかったら1つ前のレベルで足慣らしもアリ"]};
+  $("rMsg").textContent=pick(msgs[stars]);
+  const canNext=G.level<LV_MAX&&stars>0;
+  $("rNext").textContent=canNext?"つぎのレベルへ →":(G.level>=LV_MAX&&stars>0?"このモードは制覇ずみ！ホームへ":"もういちどチャレンジ");
+  $("rNext").onclick=()=>{ if(canNext)startGame(G.mode,G.level+1); else if(G.level>=LV_MAX&&stars>0)goHome(); else startGame(G.mode,G.level); };
+  $("rRetry").onclick=()=>startGame(G.mode,G.level);
+  show("scrResult");
+  if(stars>0)sndWin();
+  if(stars===3)confetti();
+}
+function confetti(){
+  const c=document.createElement("div");c.className="confetti";
+  const em=["⭐","🌟","💛","🚗","✨"];
+  for(let i=0;i<26;i++){
+    const s=document.createElement("i");s.textContent=pick(em);
+    s.style.left=rnd(100)+"vw";s.style.animationDelay=(Math.random()*0.9)+"s";
+    s.style.fontSize=(13+rnd(12))+"px";c.appendChild(s);
+  }
+  document.body.appendChild(c);
+  setTimeout(()=>c.remove(),3600);
+}
+
+/* ================= モード1：とっさの左右 ================= */
+const DIR={L:{g:"⬅️",label:"左折",say:"左",arr:"⬅"},S:{g:"⬆️",label:"直進",say:"直進",arr:"⬆"},R:{g:"➡️",label:"右折",say:"右",arr:"➡"}};
+const RUN={};
+RUN.reflex=function(level){
+  const P=[
+    {time:3200,rounds:8, kinds:["simple"]},
+    {time:2800,rounds:8, kinds:["voice"]},
+    {time:2600,rounds:10,kinds:["conflict"]},
+    {time:2600,rounds:8, kinds:["delay"]},
+    {time:2000,rounds:12,kinds:["simple","voice","conflict","delay"]},
+  ][level-1];
+  const stage=$("stage");
+  stage.innerHTML=`<p class="prompt" id="rfPrompt"></p>
+    <div class="roadView"><div class="sunGlow"></div><div class="road"></div><div class="lane"></div>
+      <div class="naviBox" id="navi"><div class="arr" id="nArr"></div><div class="say" id="nSay"></div><div class="dist" id="nDist"></div></div>
+    </div>`;
+  const hint={simple:"矢印のとおりにタップ！",voice:"音声案内のとおりに！",
+    conflict:"⚠️ 矢印はウソつき。<b>ことば</b>にしたがって！",delay:"案内を覚えて、交差点が来たら答える！"};
+  let round=0;
+  function next(){
+    if(round>=P.rounds)return finishGame();
+    round++;setCount(round,P.rounds);
+    const kind=pick(P.kinds);
+    $("rfPrompt").innerHTML=hint[kind];
+    const dirs=(kind==="voice"||kind==="delay")?["L","S","R"]:["L","R"];
+    const ans=pick(dirs);
+    const navi=$("navi");navi.classList.remove("hiddenMsg");
+    const row=ansRow(dirs.map(k=>({g:DIR[k].g,label:DIR[k].label,key:k})));
+    let armed=true,acceptFrom=0;
+    function settle(picked){
+      if(!armed)return;armed=false;
+      stopTimerBar();
+      const ok=picked===ans;mark(ok);lockRow(row,picked,ans);
+      later(700,next);
+    }
+    row.addEventListener("click",e=>{
+      const b=e.target.closest(".ansBtn");
+      if(!b||Date.now()<acceptFrom)return;
+      settle(b.dataset.key);
+    });
+    if(kind==="simple"){
+      $("nArr").textContent=DIR[ans].arr;$("nSay").textContent=DIR[ans].say;$("nDist").textContent="この先";
+      setTimerBar(P.time,()=>settle(null));
+    }else if(kind==="voice"){
+      $("nArr").textContent="🔉";$("nSay").textContent="この先 "+DIR[ans].say+(ans==="S"?" です":"方向です");$("nDist").textContent="およそ100m";
+      setTimerBar(P.time,()=>settle(null));
+    }else if(kind==="conflict"){
+      const fake=pick(["L","R"].filter(k=>k!==ans));
+      $("nArr").textContent=DIR[fake].arr;$("nSay").textContent=DIR[ans].say+"です";$("nDist").textContent="ことばが正解！";
+      setTimerBar(P.time,()=>settle(null));
+    }else{ // delay：覚えて待つ
+      acceptFrom=Infinity;
+      $("nArr").textContent=DIR[ans].arr;$("nSay").textContent=DIR[ans].say+(ans==="S"?" です":"方向です");$("nDist").textContent="300m先 — おぼえて！";
+      setTimerBar(null);
+      later(1400,()=>{
+        navi.classList.add("hiddenMsg");
+        $("nArr").textContent="…";$("nSay").textContent="交差点に近づいています";
+        let c=3;$("nDist").textContent="あと "+c;
+        const tick=()=>{c--;if(c>0){sndTick();$("nDist").textContent="あと "+c;later(650,tick);}
+          else{$("nDist").textContent="いま！どっち？";$("nArr").textContent="❓";
+            acceptFrom=0;setTimerBar(P.time,()=>settle(null));}};
+        later(650,tick);
+      });
+    }
+  }
+  next();
+};
+
+/* ================= モード2：ちずクルクル ================= */
+RUN.rotate=function(level){
+  const P=[
+    {rounds:8, time:9000, headings:[0],          landmark:false},
+    {rounds:8, time:9000, headings:[90,270],     landmark:false},
+    {rounds:8, time:10000,headings:[180],        landmark:false},
+    {rounds:10,time:8000, headings:[0,90,180,270],landmark:false},
+    {rounds:10,time:8000, headings:[0,90,180,270],landmark:true},
+  ][level-1];
+  const armPt=(a,r)=>a===0?[170,170-r]:a===90?[170+r,170]:a===180?[170,170+r]:[170-r,170];
+  const stage=$("stage");
+  let round=0;
+  function next(){
+    if(round>=P.rounds)return finishGame();
+    round++;setCount(round,P.rounds);
+    const h=pick(P.headings);                    // 車の向き（絶対方位）
+    const isLm=P.landmark&&round%2===0;
+    let ans,qHtml,extras="";
+    if(!isLm){
+      const rel=pick([0,90,270]);                // 0直進 90右 270左
+      ans=rel===0?"S":rel===90?"R":"L";
+      const t=(h+rel)%360;
+      const [sx,sy]=armPt(t,128);
+      extras=`<text x="${sx}" y="${sy+9}" font-size="30" text-anchor="middle">⭐</text>`;
+      qHtml=`運転席から見て、<b>⭐へ行くには？</b>`;
+    }else{
+      const rel=pick([90,270]);
+      ans=rel===90?"R":"L";
+      const t=(h+rel)%360;
+      const em=pick(["🏪","🍞","⛽","🏥","🌸"]);
+      const [sx,sy]=armPt(t,120);
+      extras=`<text x="${sx}" y="${sy+9}" font-size="28" text-anchor="middle">${em}</text>`;
+      qHtml=`運転席から見て、<b>${em} はどっち側？</b>`;
+    }
+    const [cx,cy]=armPt((h+180)%360,86);        // 車は進行方向の手前の腕にいる
+    stage.innerHTML=`<p class="prompt">${qHtml}</p>
+      <div class="mapWrap"><svg viewBox="0 0 340 340" role="img" aria-label="上から見た地図">
+        <rect x="0" y="0" width="340" height="340" rx="20" fill="#262152"/>
+        <rect x="143" y="0" width="54" height="340" fill="#39336E"/>
+        <rect x="0" y="143" width="340" height="54" fill="#39336E"/>
+        <line x1="170" y1="0" x2="170" y2="340" stroke="#FFD166" stroke-width="3" stroke-dasharray="10 12" opacity=".6"/>
+        <line x1="0" y1="170" x2="340" y2="170" stroke="#FFD166" stroke-width="3" stroke-dasharray="10 12" opacity=".6"/>
+        ${extras}
+        <g transform="translate(${cx},${cy}) rotate(${h})">
+          <rect x="-12" y="-20" width="24" height="40" rx="8" fill="#FF8A7A"/>
+          <rect x="-8" y="-14" width="16" height="9" rx="3" fill="#2B2653"/>
+          <rect x="-8" y="6" width="16" height="7" rx="3" fill="#2B2653"/>
+          <path d="M -7 -26 L 0 -34 L 7 -26 Z" fill="#FFD166"/>
+        </g>
+        <g transform="translate(300,40)">
+          <circle r="20" fill="#2B2653" stroke="#443D86"/>
+          <path d="M 0 -13 L 5 4 L 0 0 L -5 4 Z" fill="#FF6B81"/>
+          <text y="-24" font-size="11" text-anchor="middle" fill="#ABA3DC" font-weight="700">北</text>
+        </g>
+      </svg></div>`;
+    const btns=isLm?[{g:"👈",label:"左側",key:"L"},{g:"👉",label:"右側",key:"R"}]
+                   :[{g:"⬅️",label:"左折",key:"L"},{g:"⬆️",label:"直進",key:"S"},{g:"➡️",label:"右折",key:"R"}];
+    const row=ansRow(btns);
+    let armed=true;
+    function settle(pk){if(!armed)return;armed=false;stopTimerBar();
+      mark(pk===ans);lockRow(row,pk,ans);later(800,next);}
+    row.addEventListener("click",e=>{const b=e.target.closest(".ansBtn");if(b)settle(b.dataset.key);});
+    setTimerBar(P.time,()=>settle(null));
+  }
+  next();
+};
+
+/* ================= モード3：みちじゅんメモ ================= */
+const LM=[["🏪","コンビニ"],["🍞","パン屋さん"],["📮","ポスト"],["⛽","ガソスタ"],["🌸","花屋さん"],
+          ["🏫","小学校"],["🚉","駅前"],["🍜","ラーメン屋"],["💈","床屋さん"],["🏥","病院"],["🐶","犬のいる家"],["🅿️","駐車場"]];
+RUN.memory=function(level){
+  const P=[
+    {steps:3,decoys:0,memoMs:null, time:7000},
+    {steps:4,decoys:0,memoMs:null, time:7000},
+    {steps:4,decoys:2,memoMs:16000,time:7000},
+    {steps:5,decoys:2,memoMs:16000,time:6500},
+    {steps:6,decoys:2,memoMs:15000,time:6000},
+  ][level-1];
+  const pool=shuffle(LM);
+  const route=pool.slice(0,P.steps).map(lm=>({lm,dir:pick(["L","R"])}));
+  const decoys=pool.slice(P.steps,P.steps+P.decoys).map(lm=>({lm,dir:"S",decoy:true}));
+  // ひっかけを途中に混ぜる（先頭は必ず本物）
+  let events=route.slice();
+  decoys.forEach(d=>{events.splice(1+rnd(events.length),0,d);});
+  const stage=$("stage");
+  setCount("","");
+  stage.innerHTML=`<p class="prompt">この道じゅんを<b>おぼえて</b>ね${P.decoys?"（リストにないお店が出たら<b>直進</b>！）":""}</p>
+    <div class="memoList">${route.map((s,i)=>`
+      <div class="memoStep"><span class="n">${i+1}</span><span class="e">${s.lm[0]}</span>
+      <span class="t">${esc(s.lm[1])}</span><span class="d ${s.dir}">${s.dir==="L"?"を 左":"を 右"}</span></div>`).join("")}
+    </div>`;
+  $("controls").innerHTML=`<button class="primaryBtn" id="memGo">おぼえた！出発 🚗</button>`;
+  let started=false;
+  function drive(){
+    if(started)return;started=true;
+    let i=0;
+    function next(){
+      if(i>=events.length)return finishGame();
+      const ev=events[i];i++;setCount(i,events.length);
+      stage.innerHTML=`<p class="prompt">${ev.decoy?"あれ、この店…リストにあった？":"目印が見えてきた！"}</p>
+        <div class="bigCard"><span class="emoji">${ev.lm[0]}</span>
+        <span class="label">${esc(ev.lm[1])}</span>
+        <span class="note">どっちへ？</span></div>`;
+      const row=ansRow([{g:"⬅️",label:"左折",key:"L"},{g:"⬆️",label:"直進",key:"S"},{g:"➡️",label:"右折",key:"R"}]);
+      let armed=true;
+      function settle(pk){if(!armed)return;armed=false;stopTimerBar();
+        mark(pk===ev.dir);lockRow(row,pk,ev.dir);later(800,next);}
+      row.addEventListener("click",e=>{const b=e.target.closest(".ansBtn");if(b)settle(b.dataset.key);});
+      setTimerBar(P.time,()=>settle(null));
+    }
+    next();
+  }
+  $("memGo").addEventListener("click",drive);
+  if(P.memoMs)setTimerBar(P.memoMs,drive); else setTimerBar(null);
+};
+
+/* ================= モード4：いまどこ？ ================= */
+RUN.where=function(level){
+  const P=[
+    {rounds:6,turns:2,straight:false,askStart:false,showMs:1000},
+    {rounds:6,turns:3,straight:false,askStart:false,showMs:950},
+    {rounds:6,turns:4,straight:true, askStart:false,showMs:900},
+    {rounds:6,turns:3,straight:true, askStart:true, showMs:950},
+    {rounds:8,turns:5,straight:true, askStart:true, showMs:750},
+  ][level-1];
+  const stage=$("stage");
+  const VEC=[[0,1],[1,0],[0,-1],[-1,0]]; // 北 東 南 西
+  let round=0;
+  function genSeq(){
+    const moves=[];let n=0;
+    while(n<P.turns){
+      if(P.straight&&Math.random()<0.28){moves.push("S");}
+      else{moves.push(pick(["L","R"]));n++;}
+    }
+    return moves;
+  }
+  function simulate(moves){
+    let hd=0,x=0,y=0;
+    moves.forEach(mv=>{
+      if(mv==="L")hd=(hd+3)%4;else if(mv==="R")hd=(hd+1)%4;
+      x+=VEC[hd][0];y+=VEC[hd][1];
+    });
+    return {hd,x,y};
+  }
+  function next(){
+    if(round>=P.rounds)return finishGame();
+    round++;setCount(round,P.rounds);
+    let moves,sim;
+    const askStart=P.askStart&&round%2===0;
+    for(let tries=0;tries<40;tries++){
+      moves=genSeq();sim=simulate(moves);
+      if(!askStart)break;
+      const bx=-sim.x,by=-sim.y;
+      const f=VEC[sim.hd],r=VEC[(sim.hd+1)%4];
+      const fc=bx*f[0]+by*f[1],rc=bx*r[0]+by*r[1];
+      if(Math.abs(fc)!==Math.abs(rc))break; // ななめは避ける
+    }
+    $("controls").innerHTML="";
+    setTimerBar(null);
+    stage.innerHTML=`<p class="prompt">運転中… ながれる案内を<b>目で追って</b>ね</p>
+      <div class="bigCard"><span class="emoji" id="whEmoji">🚗</span>
+      <span class="label" id="whLabel">出発！</span><span class="note" id="whNote">スタートの向きは ⬆️</span></div>`;
+    const SHOW={L:["↰","左に まがった"],R:["↱","右に まがった"],S:["↑","そのまま 直進"]};
+    let i=0;
+    function play(){
+      if(i>=moves.length)return ask();
+      const mv=moves[i];i++;
+      sndTick();
+      $("whEmoji").textContent=SHOW[mv][0];
+      $("whLabel").textContent=SHOW[mv][1];
+      $("whNote").textContent=i+" / "+moves.length;
+      later(P.showMs,play);
+    }
+    function ask(){
+      let ans,row;
+      if(!askStart){
+        ans=["U","R","D","L"][sim.hd];
+        $("whEmoji").textContent="🤔";
+        $("whLabel").textContent="いま、どっち向き？";
+        $("whNote").textContent="スタートの向きを ⬆️ とすると…";
+        row=ansRow([{g:"⬆️",label:"おなじ向き",key:"U"},{g:"➡️",label:"みぎ向き",key:"R"},
+                    {g:"⬇️",label:"はんたい",key:"D"},{g:"⬅️",label:"ひだり向き",key:"L"}],"grid4");
+      }else{
+        const bx=-sim.x,by=-sim.y;
+        const f=VEC[sim.hd],r=VEC[(sim.hd+1)%4];
+        const fc=bx*f[0]+by*f[1],rc=bx*r[0]+by*r[1];
+        ans=Math.abs(fc)>Math.abs(rc)?(fc>0?"F":"B"):(rc>0?"RS":"LS");
+        $("whEmoji").textContent="🏠";
+        $("whLabel").textContent="スタート地点はどっち？";
+        $("whNote").textContent="いまの車から見て、だいたいの方向でOK";
+        row=ansRow([{g:"⬆️",label:"前のほう",key:"F"},{g:"➡️",label:"右のほう",key:"RS"},
+                    {g:"⬇️",label:"うしろ",key:"B"},{g:"⬅️",label:"左のほう",key:"LS"}],"grid4");
+      }
+      let armed=true;
+      function settle(pk){if(!armed)return;armed=false;stopTimerBar();
+        mark(pk===ans);lockRow(row,pk,ans);later(850,next);}
+      row.addEventListener("click",e=>{const b=e.target.closest(".ansBtn");if(b)settle(b.dataset.key);});
+      setTimerBar(9000,()=>settle(null));
+    }
+    later(900,play);
+  }
+  next();
+};
+
+/* ================= 起動 ================= */
+renderHome();
+</script>
