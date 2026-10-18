@@ -17,7 +17,8 @@
   h1 small { display: block; font-size: 32px; color: var(--sub); font-weight: normal; margin-top: 10px; }
   .body { font-size: 38px; line-height: 1.55; }
   .cap { position: absolute; left: 0; right: 0; bottom: 0; min-height: 168px; background: var(--cap); color: #fff;
-         font-size: 40px; line-height: 1.45; padding: 26px 96px; display: flex; align-items: center; }
+         font-size: 40px; line-height: 1.45; padding: 26px 290px 30px 96px; display: flex; align-items: center; }
+  .credit { position: absolute; left: 96px; bottom: 6px; font-size: 20px; color: #9aa3b5; }
   table { border-collapse: collapse; font-size: 34px; }
   th, td { border-bottom: 2px solid var(--line); padding: 10px 22px; text-align: right; }
   th { color: var(--sub); font-weight: normal; font-size: 28px; }
@@ -42,11 +43,11 @@
   <div class="page">{{PAGE}}</div>
   {{BODY}}
 </div>
-<div class="cap">{{CAPTION}}</div>
+<div class="cap">{{CAPTION}}<div class="credit">VOICEVOX:玄野武宏</div></div>
 <script>
   // data-s="n" の要素は、ナレーションの n 番目の文から表示する
   const STEP = {{STEP}};
-  document.querySelectorAll('[data-s]').forEach(e => { if (+e.dataset.s > STEP) e.style.visibility = 'hidden'; });
+  document.querySelectorAll('[data-s]').forEach(e => { if (+e.dataset.s > STEP) { e.style.visibility = 'hidden'; e.querySelectorAll('td').forEach(td => td.style.borderColor = 'transparent'); } });
 </script>
 </body>
 </html>

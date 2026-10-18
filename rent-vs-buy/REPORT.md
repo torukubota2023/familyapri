@@ -4,7 +4,7 @@
 - 対象：夫60歳・妻57歳の2人暮らし。那覇市おもろまち周辺。比べる期間は25年と30年。
 - 計算に使った数字は、ご依頼の「比較用の仮の共通条件」です。お二人の実際の資産・収入・審査結果ではありません。
 - 計算プログラム：[`model.py`](model.py)（計算のしくみ）、[`analyze.py`](analyze.py)（全ケースの計算）。結果は [`results.json`](results.json) / [`results.txt`](results.txt) にあります。
-- 解説動画：`video/out/rent_vs_buy_naha.mp4`（約16分・ナレーションと字幕付き）。字幕ファイルは `video/out/rent_vs_buy_naha.srt` です。作り直す手順は [`video/README.md`](video/README.md) にあります。
+- 解説動画：`video/out/rent_vs_buy_naha.mp4`（約14分・VOICEVOX:玄野武宏のナレーション、猫アバター、字幕付き）。字幕ファイルは `video/out/rent_vs_buy_naha.srt` です。作り直す手順は [`video/README.md`](video/README.md) にあります。
 
 ---
 
